@@ -2,6 +2,10 @@
 
 A highly extensible/customizable search engine. Embeddable or stand-alone.
 
+> **WARNING:** This is very much pre-alpha software. Until `1.0.0` is released,
+there is no guarantee of API stability, or complete implementations. Patience is
+appreciated!
+
 ## Installation
 
 To install dependencies:

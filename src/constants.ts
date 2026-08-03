@@ -4,6 +4,9 @@ export const QUERY_DOCUMENT = 'just-a-query';
 
 export const CONTENT_TYPE_PLAIN = 'text/plain';
 
+export const DEFAULT_HOSTNAME = "0.0.0.0";
+export const DEFAULT_PORT = 8080;
+
 export const PUNCTUATION = /["'`~!@#$%^&*():;<>\[\]{},?/|\\+=._\-]/g;
 
 export const ENGLISH_STOP_WORDS = [

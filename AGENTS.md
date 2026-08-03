@@ -35,24 +35,39 @@ test("hello world", () => {
 
 ## Project: anthology
 
-**v0.1.0-alpha** | Full-text search engine — embeddable or stand-alone | License: BSD-3-Clause
+**v0.1.0-alpha** | Full-text search engine | License: BSD-3-Clause
+
+### Core design intent
+
+Anthology is designed to be used in three distinct modes, all from the same package:
+
+- **Embeddable library** — import `SearchEngine`, indexes, tokenizers, and preprocessors directly into any Bun/TypeScript project. No HTTP layer involved.
+- **Standalone HTTP server** — run `bun src/server.ts` (via `import.meta.main`) or call `makeServer({})` to get a fully wired REST API with sane defaults.
+- **CLI** — run the `anthology` binary (or `bun anthology.ts`); subcommands dispatch to server or future tooling.
+
+`index.ts` is the public API surface for all three modes — pure re-exports, no side effects on import. Nothing executes unless the caller explicitly calls it.
 
 ### Architecture Overview
 
-The engine is built around pluggable interfaces (`IIndex`, `ITokenizer`, `IPreprocessorPlugin`, `IDocumentStore`, `IScorer`) composed by a `SearchEngine` orchestrator. The HTTP server and CLI layers are stubs/WIP.
+The engine is built around pluggable interfaces (`IIndex`, `ITokenizer`, `IPreprocessorPlugin`, `IDocumentStore`, `IScorer`) composed by a `SearchEngine` orchestrator. The HTTP server and CLI layers are functional.
 
 ### Source layout
 
 ```
+anthology.ts             # CLI binary shim (» src/cli.ts#run)
+index.ts                 # Public API — pure re-exports, no side effects
 src/
   engine.ts              # SearchEngine orchestrator
   preprocessor.ts        # Preprocessor plugin registry
+  context.ts             # ViewContext type ({ engine: SearchEngine })
   interfaces.ts          # All interfaces (IIndex, ITokenizer, IPreprocessorPlugin, IDocumentStore, IScorer)
   types.ts               # Core types (Document, Vector, TermVector, Token, Result)
-  constants.ts           # VERSION, QUERY_DOCUMENT, CONTENT_TYPE_PLAIN, PUNCTUATION, ENGLISH_STOP_WORDS
+  constants.ts           # VERSION, QUERY_DOCUMENT, CONTENT_TYPE_PLAIN, DEFAULT_HOSTNAME, DEFAULT_PORT, PUNCTUATION, ENGLISH_STOP_WORDS
+  server.ts              # makeServer() factory + import.meta.main direct-run guard
+  cli.ts                 # run(args) — subcommand dispatch; "serve" is the default
   indexes/
     in-memory.ts         # InMemoryIndex
-    json.ts              # JSONIndex (persistent)
+    json.ts              # JSONIndex (persistent, dirty-flag save/load)
   tokenizers/
     simple.ts            # SimpleTokenizer
     snowball.ts          # SnowballTokenizer (stub)
@@ -60,17 +75,15 @@ src/
     html.ts              # HTMLPreprocessor
   documents/
     in-memory.ts         # InMemoryDocumentStore
-    json.ts              # JSONDocumentStore (WIP — storagePath/isDirty not wired yet)
+    json.ts              # JSONDocumentStore (WIP — storagePath/isDirty not wired in constructor)
   scorers/
-    simple.ts            # SimpleScorer (identity/pass-through)
+    simple.ts            # SimpleScorer (identity pass-through)
   utils/
     html.ts              # stripTags() utility
-  server.ts              # Bun.serve() HTTP server (WIP/broken)
-  cli.ts                 # CLI entry point (empty stub)
   views/
-    documents.ts         # HTTP view stubs
-    search.ts            # Empty
-    stats.ts             # Empty
+    documents.ts         # makeDocumentViews(ctx) — getDocument, updateDocument, deleteDocument
+    search.ts            # makeSearchViews(ctx) — basicSearch
+    stats.ts             # makeStatsViews(ctx) — generalStats
 ```
 
 ### Core Types (`src/types.ts`)
@@ -161,17 +174,90 @@ Stubs to add: `MarkdownPreprocessor`, `PDFPreprocessor`.
 - `PUNCTUATION` — regex used by `SimpleTokenizer` to strip punctuation
 - `ENGLISH_STOP_WORDS` — default stop word list for `SimpleTokenizer`
 
-### WIP / Stub Layers
+### HTTP server (`src/server.ts`)
 
-- **`src/server.ts`** — Partially wired `Bun.serve()` routes (`/documents/:id`, `/search/basic`, `/stats`). Broken: references non-existent `SimpleEnglishTokenizer`; missing comma syntax error; `engine.getDocument`/`engine.deleteDocument` don't exist on `SearchEngine`.
-- **`src/documents/json.ts`** — `storagePath` and `#isDirty` referenced but not declared in constructor.
-- **`src/views/documents.ts`** — Stub handlers with no engine import.
-- **`src/views/search.ts`**, **`src/views/stats.ts`** — Empty files.
-- **`src/cli.ts`** — Empty; `index.ts` and `anthology.ts` re-export a `run` function that doesn't exist yet.
+`makeServer(options: IServerOptions): Bun.Server<undefined>`
+
+- `options.engine` — optional; defaults to `new SearchEngine(new InMemoryIndex(), new SimpleTokenizer(), new Preprocessor().register(new HTMLPreprocessor()))`
+- `options.hostname` — defaults to `DEFAULT_HOSTNAME` (`"0.0.0.0"`)
+- `options.port` — defaults to `DEFAULT_PORT` (`8080`)
+- Constructs a `ViewContext`, instantiates all three view factories, wires them to `Bun.serve()` routes
+- `import.meta.main` guard at the bottom allows `bun src/server.ts` for direct execution
+
+**Routes:**
+
+| Method | Path | Handler |
+|---|---|---|
+| GET | `/documents/:id` | `docViews.getDocument` |
+| POST / PUT | `/documents/:id` | `docViews.updateDocument` |
+| DELETE | `/documents/:id` | `docViews.deleteDocument` |
+| GET | `/search/basic?q=` | `searchViews.basicSearch` |
+| GET | `/stats` | `statsViews.generalStats` |
+| GET | `/favicon.ico` | `Bun.file("./favicon.ico")` |
+| (catch-all) | — | 404 JSON |
+
+Commented-out future routes: `/search/autocomplete`, `/search/more-like-this/:id`.
+
+### CLI (`src/cli.ts` + `anthology.ts`)
+
+`anthology.ts` is the binary shim (`#!/usr/bin/env bun`); it calls `run(process.argv.slice(2))` and exits with the returned code.
+
+`src/cli.ts` exports `run(args: string[]): Promise<number>` — subcommand dispatch:
+- `serve` (default when no args given) — calls `makeServer({})`, logs the URL
+- Unknown command — logs error, returns exit code 1
+
+### Views (`src/views/`)
+
+All view factories follow the pattern `makeXxxViews({ engine }: ViewContext)` and return an object of `async (req: Bun.BunRequest) => Promise<Response>` handlers. The `ViewContext` type (`src/context.ts`) currently carries only `engine`; add to it when views need additional dependencies (logger, config, etc.).
+
+**`makeDocumentViews`:**
+- `getDocument` — extracts `req.params.id`; 400 if missing, 200 + `{ success, document }` on success
+- `updateDocument` — parses JSON body (`as unknown as Document`; validation is a FIXME); calls `engine.addDocument`; 202 + `{ success, id }`
+- `deleteDocument` — extracts `req.params.id`; 400 if missing, 200 + `{ success, id }` on success
+
+**`makeSearchViews`:**
+- `basicSearch` — reads `?q=` from URL; 400 if absent/empty, 200 + `{ success, query, results }` on success
+
+**`makeStatsViews`:**
+- `generalStats` — returns `{ version }` (FIXMEs: add doc/term counts, consider Prometheus)
+
+### `index.ts` — Public API
+
+Pure re-exports only, no side effects. Organised in tiers:
+
+```ts
+// Tier 1: embeddable core
+export { SearchEngine, Preprocessor };
+export { InMemoryIndex, JSONIndex };
+export { SimpleTokenizer };
+export { HTMLPreprocessor };
+
+// Tier 2: HTTP server (opt-in)
+export { makeServer };
+
+// Tier 3: types & interfaces (TypeScript embedders)
+export type { Document, DocId, Vector, TermVector, Result };
+export type { IIndex, ITokenizer, IPreprocessorPlugin, IDocumentStore, IScorer };
+export type { ViewContext };
+```
+
+### WIP / Known issues
+
+- **`src/documents/json.ts`** — `storagePath` and `#isDirty` referenced but not declared in the constructor; not yet wired into `SearchEngine`.
+- **`engine.getDocument`** — currently delegates to `index.save()` (placeholder); needs a real `IDocumentStore` backing.
+- **`updateDocument` validation** — body is cast `as unknown as Document` with no runtime validation; flagged as FIXME.
+- **`/favicon.ico`** — `Bun.file("./favicon.ico")` will error at runtime until the file exists.
+- **`generalStats`** — only returns `version`; doc/term counts not yet available.
+- **`SnowballTokenizer`** — empty stub.
+- Future routes (`/search/autocomplete`, `/search/more-like-this/:id`) commented out.
 
 ### Tests (`tests/`)
 
-Run with `bun test` (107 tests, all passing).
+Run with `bun test` (125 tests, all passing).
+
+`tests/helpers.ts` provides shared test utilities:
+- `makeMockEngine(overrides)` — returns a `SearchEngine`-shaped mock with no-op defaults; individual methods overridable per-test
+- `makeRequest(url, params, init)` — builds a `Bun.BunRequest`-compatible object via `Object.assign` on a native `Request`
 
 | File | What it covers |
 |---|---|
@@ -182,6 +268,9 @@ Run with `bun test` (107 tests, all passing).
 | `tests/indexes/in-memory.test.ts` | `InMemoryIndex` (getTerm, addTerm, deleteDocument) |
 | `tests/indexes/json.test.ts` | `JSONIndex` (same API + serialize/deserialize/save/load/dirty-flag) |
 | `tests/tokenizers/simple.test.ts` | `SimpleTokenizer` (prepare, tokenize, offsets, stop words, TermVector shape) |
+| `tests/views/documents.test.ts` | `makeDocumentViews` (status codes, response shapes, engine delegation, mock engine) |
+| `tests/views/search.test.ts` | `makeSearchViews` (validation, results, query echo, engine delegation) |
+| `tests/views/stats.test.ts` | `makeStatsViews` (status, version in body, content-type header) |
 
 ### Task Runner
 

@@ -23,6 +23,11 @@ export class SearchEngine {
     return await this.index.load();
   }
 
+  async getDocument(id: DocId): Promise<Document> {
+    // FIXME: Need document storage implemented...
+    return await this.index.save();
+  }
+
   async addDocument(document: Document): Promise<void> {
     const processed = await this.preprocessor.process(document);
     const termVectors = this.tokenizer.tokenize(processed);
@@ -30,6 +35,11 @@ export class SearchEngine {
       this.index.addTerm(tv);
     });
     return await this.index.save();
+  }
+
+  async deleteDocument(id: DocId): Promise<void> {
+    // FIXME: Need document storage implemented...
+    return await this.index.deleteDocument(id);
   }
 
   search(query: string): DocId[] {

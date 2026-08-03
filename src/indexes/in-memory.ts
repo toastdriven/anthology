@@ -1,0 +1,44 @@
+import type { IIndex } from '../interfaces';
+import type {
+  DocId,
+  TermVector,
+  Vector,
+} from '../types';
+
+export class InMemoryIndex implements IIndex {
+  #data: Map<string, Vector[]> = new Map();
+
+  getTerm(term: string): Vector[] {
+    const vectors = this.#data.get(term);
+    if (vectors === undefined) {
+      return [];
+    }
+    return vectors.slice();
+  }
+
+  addTerm(tv: TermVector): void {
+    const vectors = this.getTerm(tv.term);
+    const isDupe = vectors.some(v => v.id === tv.vector.id && v.location === tv.vector.location);
+    if (!isDupe) {
+      vectors.push(tv.vector);
+      this.#data.set(tv.term, vectors);
+    }
+  }
+
+  deleteDocument(docId: DocId): void {
+    for (const [term, vectors] of this.#data) {
+      const revised = vectors.filter(v => v.id !== docId);
+      if (revised.length !== vectors.length) {
+        this.#data.set(term, revised);
+      }
+    }
+  }
+
+  async load(): Promise<void> {
+    // No-op.
+  }
+
+  async save(): Promise<void> {
+    // No-op.
+  }
+}

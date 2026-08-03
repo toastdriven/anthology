@@ -1,0 +1,5 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["anthology.ts", "index.ts", "src/**/*.ts"],
+  "exclude": ["tests/**/*"]
+}

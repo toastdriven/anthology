@@ -1,0 +1,32 @@
+{
+  "name": "anthology",
+  "version": "0.1.0-alpha",
+  "description": "A highly extensible/customizable search engine. Embeddable or stand-alone.",
+  "module": "index.ts",
+  "bin": {
+    "anthology": "./anthology.ts"
+  },
+  "type": "module",
+  "private": false,
+  "author": "Daniel Lindsley",
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/toastdriven/anthology"
+  },
+  "bugs": {
+    "url": "https://github.com/toastdriven/anthology/issues"
+  },
+  "homepage": "https://anthologysearch.org/",
+  "keywords": [
+    "search"
+  ],
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "^3.6.2",
+    "typescript": "^5.9.3"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

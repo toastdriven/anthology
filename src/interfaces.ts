@@ -1,7 +1,6 @@
 import type {
   DocId,
   Document,
-  Result,
   TermVector,
   Vector,
 } from './types';
@@ -21,15 +20,23 @@ export interface ITokenizer {
 
 export interface IDocumentStore {
   getDocument(id: DocId): Promise<Document>;
-  addDocument(document: Document): Promise<void>;
-  deleteDocument(id: DocId): Promise<void>;
+  addDocument(document: Document): Promise<boolean>;
+  deleteDocument(id: DocId): Promise<boolean>;
 }
 
 export interface IScorer {
-  score(result: Result): Result;
+  score(result: IResult): Promise<IResult>;
 }
 
 export interface IPreprocessorPlugin {
   readonly contentTypes: string[];
   process(document: Document): Promise<Document>;
+}
+
+export type IResult = {
+  id: DocId;
+  locations: Vector[];
+  score: number;
+  document?: Document;
+  docLength?: number;
 }

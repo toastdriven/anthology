@@ -1,11 +1,17 @@
-import type { IScorer } from "../interfaces";
 import type {
-  DocId,
-  Result,
-} from '../types';
+  IResult,
+  IScorer,
+} from "../interfaces";
 
 export class SimpleScorer implements IScorer {
-  score(result: Result): Result {
+  async score(result: IResult): Promise<IResult> {
+    let totalTermLength = 0;
+
+    for (let vector of result.locations) {
+      totalTermLength += vector.originalWord.length;
+    }
+
+    result.score = totalTermLength / result.docLength;
     return result;
   }
 }

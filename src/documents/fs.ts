@@ -1,11 +1,16 @@
+import { DATA_ROOT } from '../constants';
 import type { IDocumentStore } from "../interfaces";
 import type {
   DocId,
   Document,
 } from '../types';
 
-export class InMemoryDocumentStore implements IDocumentStore {
-  #data: Map<DocId, Document> = new Map();
+export class FilesystemDocumentStore implements IDocumentStore {
+  private readonly dataPath: string;
+
+  constructor(dataPath?: string) {
+    this.dataPath = dataPath ?? DATA_ROOT;
+  }
 
   async getDocument(id: DocId): Promise<Document> {
     const document = this.#data.get(id);

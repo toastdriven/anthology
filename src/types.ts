@@ -8,6 +8,7 @@ export type Document = {
 
 export type Vector = {
   id: DocId;
+  originalWord: string;
   location: number;
 };
 
@@ -20,10 +21,3 @@ export type Token = {
   word: string;
   offset: number;
 };
-
-export type Result = {
-  id: DocId;
-  docLength: number;
-  locations: number[];
-  score: number;
-}

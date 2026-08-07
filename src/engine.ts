@@ -1,9 +1,17 @@
 import { QUERY_DOCUMENT } from './constants';
+import { FilesystemDocumentStore } from './documents/fs';
 import type {
+  IDocumentStore,
   IIndex,
+  IScorer,
   ITokenizer,
 } from './interfaces';
 import { Preprocessor } from './preprocessor';
+import {
+  Result,
+  Results,
+} from './results';
+import { SimpleScorer } from './scorers/simple';
 import type {
   DocId,
   Document,
@@ -14,21 +22,25 @@ export class SearchEngine {
     private readonly index: IIndex,
     private readonly tokenizer: ITokenizer,
     private readonly preprocessor: Preprocessor = new Preprocessor(),
+    private readonly documentStore: IDocumentStore = new FilesystemDocumentStore(),
+    private readonly scorer: IScorer = new SimpleScorer(),
   ) {
     this.index = index;
     this.tokenizer = tokenizer;
+    this.preprocessor = preprocessor;
+    this.documentStore = documentStore;
   }
 
   async setUp(): Promise<void> {
-    return await this.index.load();
+    // TODO: Just an empty hook for now?
   }
 
   async getDocument(id: DocId): Promise<Document> {
-    // FIXME: Need document storage implemented...
-    return await this.index.save();
+    return await this.documentStore.getDocument(id);
   }
 
   async addDocument(document: Document): Promise<void> {
+    await this.documentStore.addDocument(document);
     const processed = await this.preprocessor.process(document);
     const termVectors = this.tokenizer.tokenize(processed);
     termVectors.forEach((tv) => {
@@ -38,35 +50,35 @@ export class SearchEngine {
   }
 
   async deleteDocument(id: DocId): Promise<void> {
-    // FIXME: Need document storage implemented...
-    return await this.index.deleteDocument(id);
+    // FIXME: Need index deletion implemented...
+    await this.documentStore.deleteDocument(id);
+    return;
   }
 
-  search(query: string): DocId[] {
+  // FIXME: This API needs to change. It should always take a structured query.
+  async rawSearch(query: string): Promise<Results> {
     const queryDoc: Document = {
       id: QUERY_DOCUMENT,
       content: query,
     };
     const queryTerms = this.tokenizer.tokenize(queryDoc);
 
-    const rawResults = new Map<DocId, number>();
+    const results = new Results(this.documentStore);
 
-    queryTerms.forEach((tv) => {
+    queryTerms.forEach(async (tv) => {
       const docVectors = this.index.getTerm(tv.term);
-      // For now, scoring is straight popularity (most times seen).
-      docVectors.forEach((vector) => {
-        let count = rawResults.get(vector.id);
-        if (count === undefined) {
-          count = 0;
-        }
-        rawResults.set(vector.id, count + 1);
-      })
+      await results.addTermResults(docVectors);
     });
 
-    const matches = [...rawResults.entries()]
-      .sort(([, a], [, b]) => b - a)
-      .map(([key]) => key);
+    await results.scoreResults(this.scorer);
+    return results;
+  }
 
-    return matches;
+  // FIXME: This is a stub for the basic search & needs much more.
+  async search(query: string): Promise<Results> {
+    const rawResults = await this.rawSearch(query);
+    // FIXME: Post-slicing the results, we should be loading the documents for
+    //     each (as well as any other post-processing).
+    return rawResults.slice(0, 10);
   }
 }

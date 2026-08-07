@@ -2,6 +2,8 @@ export const VERSION = '0.1.0-alpha';
 
 export const QUERY_DOCUMENT = 'just-a-query';
 
+export const DATA_ROOT = "/var/log/anthology/data";
+
 export const CONTENT_TYPE_PLAIN = 'text/plain';
 
 export const DEFAULT_HOSTNAME = "0.0.0.0";

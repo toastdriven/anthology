@@ -47,6 +47,7 @@ export class SimpleTokenizer implements ITokenizer {
         term: cleanWord,
         vector: {
           id: document.id,
+          originalWord: token.word,
           location: token.offset,
         },
       };

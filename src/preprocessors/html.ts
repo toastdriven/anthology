@@ -4,6 +4,7 @@ import type { Document } from "../types";
 import { stripTags } from '../utils/html.ts';
 
 export class HTMLPreprocessor implements IPreprocessorPlugin {
+  readonly name = "html";
   readonly contentTypes = [
     'text/html',
   ];

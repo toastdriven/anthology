@@ -1,5 +1,12 @@
 {
   "extends": "./tsconfig.json",
-  "include": ["anthology.ts", "index.ts", "src/**/*.ts"],
-  "exclude": ["tests/**/*"]
+  "include": [
+    "anthology.ts",
+    "index.ts",
+    "src/**/*.ts",
+    "scripts/**/*.ts"
+  ],
+  "exclude": [
+    "tests/**/*"
+  ]
 }

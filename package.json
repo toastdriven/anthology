@@ -3,6 +3,9 @@
   "version": "0.1.0-alpha",
   "description": "A highly extensible/customizable search engine. Embeddable or stand-alone.",
   "module": "index.ts",
+  "exports": {
+    ".": "./index.ts"
+  },
   "bin": {
     "anthology": "./anthology.ts"
   },

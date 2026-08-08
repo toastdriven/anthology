@@ -1,9 +1,11 @@
+import { DATA_ROOT } from '../constants';
 import type { IIndex } from '../interfaces';
 import type {
   DocId,
   TermVector,
   Vector,
 } from '../types';
+import { ensurePath } from '../utils/fs';
 
 type IndexData = Map<string, Vector[]>;
 type SerializedIndexData = Record<string, Vector[]>;
@@ -13,8 +15,8 @@ export class JSONIndex implements IIndex {
   #data: IndexData;
   #isDirty: boolean = false;
 
-  constructor(storagePath: string) {
-    this.storagePath = storagePath;
+  constructor(storagePath?: string) {
+    this.storagePath = storagePath ?? `${DATA_ROOT}/indexes`;
     this.#data = new Map();
   }
 
@@ -59,6 +61,7 @@ export class JSONIndex implements IIndex {
   }
 
   async load(): Promise<void> {
+    ensurePath(this.storagePath);
     const indexFile = Bun.file(this.makeFilePath());
     if (!(await indexFile.exists())) { return; }
     const rawData: SerializedIndexData = await indexFile.json();
@@ -68,6 +71,7 @@ export class JSONIndex implements IIndex {
 
   async save(): Promise<void> {
     if (!this.#isDirty) { return; }
+    ensurePath(this.storagePath);
     const indexFile = Bun.file(this.makeFilePath());
     await indexFile.write(JSON.stringify(this.serialize()));
     this.#isDirty = false;

@@ -24,19 +24,25 @@ export interface IDocumentStore {
   deleteDocument(id: DocId): Promise<boolean>;
 }
 
-export interface IScorer {
-  score(result: IResult): Promise<IResult>;
-}
-
-export interface IPreprocessorPlugin {
-  readonly contentTypes: string[];
-  process(document: Document): Promise<Document>;
-}
-
 export type IResult = {
   id: DocId;
   locations: Vector[];
   score: number;
   document?: Document;
   docLength?: number;
+}
+
+export interface IScorer {
+  score(result: IResult): Promise<IResult>;
+}
+
+export interface IPreprocessorPlugin {
+  readonly name: string;
+  readonly contentTypes: string[];
+  process(document: Document): Promise<Document>;
+}
+
+export interface IPostprocessorPlugin {
+  readonly name: string;
+  process(result: IResult): Promise<IResult>;
 }

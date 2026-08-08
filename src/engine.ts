@@ -1,34 +1,52 @@
 import { QUERY_DOCUMENT } from './constants';
 import { FilesystemDocumentStore } from './documents/fs';
+import { InMemoryDocumentStore } from './documents/in-memory';
+import { JSONDocumentStore } from './documents/json';
+import { InMemoryIndex } from './indexes/in-memory';
 import type {
   IDocumentStore,
   IIndex,
   IScorer,
   ITokenizer,
 } from './interfaces';
+import { Postprocessor } from './postprocessor';
 import { Preprocessor } from './preprocessor';
 import {
   Result,
   Results,
 } from './results';
 import { SimpleScorer } from './scorers/simple';
+import { SimpleTokenizer } from './tokenizers/simple';
 import type {
   DocId,
   Document,
 } from './types';
 
+export interface ISearchEngineOptions {
+  index?: IIndex;
+  tokenizer?: ITokenizer;
+  preprocessor?: Preprocessor;
+  documentStore?: IDocumentStore;
+  scorer?: IScorer;
+  postprocessor?: Postprocessor;
+}
+
 export class SearchEngine {
-  constructor(
-    private readonly index: IIndex,
-    private readonly tokenizer: ITokenizer,
-    private readonly preprocessor: Preprocessor = new Preprocessor(),
-    private readonly documentStore: IDocumentStore = new FilesystemDocumentStore(),
-    private readonly scorer: IScorer = new SimpleScorer(),
-  ) {
-    this.index = index;
-    this.tokenizer = tokenizer;
-    this.preprocessor = preprocessor;
-    this.documentStore = documentStore;
+  private readonly index: IIndex;
+  private readonly tokenizer: ITokenizer;
+  private readonly preprocessor: Preprocessor;
+  private readonly documentStore: IDocumentStore;
+  private readonly scorer: IScorer;
+  private readonly postprocessor: Postprocessor;
+
+  constructor(options: ISearchEngineOptions) {
+    // FIXME: Eventually, this will need saner/persistent defaults.
+    this.index = options.index ?? new InMemoryIndex();
+    this.tokenizer = options.tokenizer ?? new SimpleTokenizer();
+    this.preprocessor = options.preprocessor ?? new Preprocessor();
+    this.documentStore = options.documentStore ?? new InMemoryDocumentStore();
+    this.scorer = options.scorer ?? new SimpleScorer();
+    this.postprocessor = options.postprocessor ?? new Postprocessor();
   }
 
   async setUp(): Promise<void> {
@@ -79,6 +97,13 @@ export class SearchEngine {
     const rawResults = await this.rawSearch(query);
     // FIXME: Post-slicing the results, we should be loading the documents for
     //     each (as well as any other post-processing).
-    return rawResults.slice(0, 10);
+    const sliced = rawResults.slice(0, 10);
+    const results: Result[] = [];
+
+    for (let res of sliced) {
+      results.push(await this.postprocessor.process(res));
+    }
+
+    return results;
   }
 }

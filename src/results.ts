@@ -1,7 +1,7 @@
 import type {
   IDocumentStore,
   IResult,
-  IScorer
+  IScorer,
 } from "./interfaces";
 import type {
   DocId,

@@ -17,7 +17,9 @@ export class SimpleScorer implements IScorer {
     }
 
     if (result.docLength > 0) {
-      result.score = (totalTermLength / result.docLength) * 100;
+      // This is essentially just computing what percentage of the document the
+      // terms take up (basic popularity).
+      result.score = totalTermLength / result.docLength;
     }
 
     return result;

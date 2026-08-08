@@ -42,6 +42,10 @@ $ bun run anthology.ts
 # "Server running at http://0.0.0.0:8080/..."
 ```
 
+## Roadmap
+
+For a rough plan of development, see the [roadmap](./docs/src/project/roadmap.md).
+
 ## Author
 
 * Code by Daniel Lindsley (@toastdriven)

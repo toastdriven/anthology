@@ -4,6 +4,7 @@ import {
   InMemoryIndex,
   JSONDocumentStore,
   JSONIndex,
+  type Results,
   SearchEngine,
 } from 'anthology';
 
@@ -19,6 +20,7 @@ const engine = new SearchEngine({
   index: new JSONIndex(dataRoot),
   documentStore: new JSONDocumentStore(dataRoot),
 });
+await engine.clear();
 
 const documents: Map<string, Document> = new Map();
 documents.set(
@@ -123,18 +125,27 @@ for (let [id, doc] of documents.entries()) {
 let query;
 let results;
 
+function trimScore(score: number): string {
+  return parseFloat(score.toString()).toFixed(6);
+}
+
+function showResults(query: string, results: Results): void {
+  console.log(`Query: '${query}'. Results: ${results.length}`);
+  for (let res of results) {
+    console.log(`* ${res.id} (Score: ${trimScore(res.score)})`)
+  }
+  console.log('\n===\n');
+}
+
 // Run some queries.
 query = 'hello';
 results = await engine.search(query);
-console.log(`Query: '${query}'. Results: ${JSON.stringify(results)}`);
-console.log('\n===\n');
+showResults(query, results);
 
 query = 'world';
 results = await engine.search(query);
-console.log(`Query: '${query}'. Results: ${JSON.stringify(results)}`);
-console.log('\n===\n');
+showResults(query, results);
 
 query = 'lives';
 results = await engine.search(query);
-console.log(`Query: '${query}'. Results: ${JSON.stringify(results)}`);
-console.log('\n===\n');
+showResults(query, results);

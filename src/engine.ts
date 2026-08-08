@@ -53,6 +53,12 @@ export class SearchEngine {
     // TODO: Just an empty hook for now?
   }
 
+  async clear(): Promise<boolean> {
+    await this.index.clear();
+    await this.documentStore.clear();
+    return true;
+  }
+
   async getDocument(id: DocId): Promise<Document> {
     return await this.documentStore.getDocument(id);
   }
@@ -83,10 +89,10 @@ export class SearchEngine {
 
     const results = new Results(this.documentStore);
 
-    queryTerms.forEach(async (tv) => {
+    for (const tv of queryTerms) {
       const docVectors = this.index.getTerm(tv.term);
       await results.addTermResults(docVectors);
-    });
+    }
 
     await results.scoreResults(this.scorer);
     return results;

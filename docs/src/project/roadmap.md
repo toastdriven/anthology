@@ -26,7 +26,7 @@ Anthology, up to the `1.0.0` release. No guarantees, just a basic plan/guide.
 ## 0.3.0
 
 * Simple Query Handling
-* ??? Scoring
+* Complex/Structured Query Handling
 
 ## 0.4.0
 
@@ -40,11 +40,12 @@ Anthology, up to the `1.0.0` release. No guarantees, just a basic plan/guide.
 ## 0.6.0
 
 * CLI tooling
-* Complex/Structured Query Handling
+* Better file-locking
 
 ## 0.7.0
 
 * More Like This
+* Batch imports
 
 ## 0.8.0
 
@@ -61,6 +62,7 @@ Anthology, up to the `1.0.0` release. No guarantees, just a basic plan/guide.
 
 ## 1.0.0
 
+* Benchmarks
 * Polish, polish, polish
 * Website
 * Docs available

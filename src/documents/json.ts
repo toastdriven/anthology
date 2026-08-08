@@ -19,8 +19,21 @@ export class JSONDocumentStore implements IDocumentStore {
     this.storagePath = storagePath ?? `${DATA_ROOT}/documents`;
   }
 
+  async length() {
+    return this.#data.size;
+  }
+
   async getDocument(id: DocId): Promise<Document> {
-    return await this.#data.get(id);
+    const doc = this.#data.get(id);
+    if (doc === undefined) {
+      throw new Error(`Document '${id}' could not be found`);
+    }
+    return doc;
+  }
+
+  async getDocumentLength(id: DocId): Promise<number> {
+    const doc = await this.getDocument(id);
+    return doc.content.length;
   }
 
   async addDocument(document: Document): Promise<boolean> {
@@ -31,6 +44,13 @@ export class JSONDocumentStore implements IDocumentStore {
 
   async deleteDocument(id: DocId): Promise<boolean> {
     this.#data.delete(id);
+    await this.save();
+    return true;
+  }
+
+  async clear(): Promise<boolean> {
+    this.#data = new Map();
+    this.#isDirty = true;
     await this.save();
     return true;
   }

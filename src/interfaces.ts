@@ -3,12 +3,15 @@ import type {
   Document,
   TermVector,
   Vector,
+  WordLocation,
 } from './types';
 
 export interface IIndex {
+  length(): Promise<number>;
   getTerm(term: string): Vector[];
   addTerm(tv: TermVector): void;
   deleteDocument(docId: DocId): void;
+  clear(): Promise<boolean>;
   load(): Promise<void>;
   save(): Promise<void>;
 }
@@ -19,17 +22,20 @@ export interface ITokenizer {
 }
 
 export interface IDocumentStore {
+  length(): Promise<number>;
   getDocument(id: DocId): Promise<Document>;
+  getDocumentLength(id: DocId): Promise<number>;
   addDocument(document: Document): Promise<boolean>;
   deleteDocument(id: DocId): Promise<boolean>;
+  clear(): Promise<boolean>;
 }
 
 export type IResult = {
   id: DocId;
-  locations: Vector[];
+  locations: WordLocation[];
   score: number;
   document?: Document;
-  docLength?: number;
+  docLength: number;
 }
 
 export interface IScorer {

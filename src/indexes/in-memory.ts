@@ -8,6 +8,10 @@ import type {
 export class InMemoryIndex implements IIndex {
   #data: Map<string, Vector[]> = new Map();
 
+  async length() {
+    return this.#data.size;
+  }
+
   getTerm(term: string): Vector[] {
     const vectors = this.#data.get(term);
     if (vectors === undefined) {
@@ -32,6 +36,11 @@ export class InMemoryIndex implements IIndex {
         this.#data.set(term, revised);
       }
     }
+  }
+
+  async clear(): Promise<boolean> {
+    this.#data = new Map();
+    return true;
   }
 
   async load(): Promise<void> {

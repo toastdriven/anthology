@@ -7,6 +7,7 @@ import type {
   DocId,
   Document,
   Vector,
+  WordLocation,
 } from "./types";
 
 
@@ -17,14 +18,10 @@ but rich/comprehensive enough to be useful "at render time".
 */
 export class Result implements IResult {
   id: DocId;
-  // FIXME: If it weren't for the mass duplications of document ids, we'd actually
-  //     just want a collection of the matching TermVectors here. Do we need/want
-  //     a different structure here? Do we care about the duplication (probably,
-  //     especially with big IDs)...?
-  locations: Vector[] = [];
+  locations: WordLocation[] = [];
   score: number = 0.0;
   document?: Document;
-  docLength?: number = 0;
+  docLength: number = 0;
 
   constructor(id: DocId) {
     this.id = id;
@@ -39,6 +36,7 @@ to the users.
 */
 export class Results {
   documentStore: IDocumentStore;
+  unscored: Map<string, IResult> = new Map();
   results: Result[] = [];
 
   constructor(documentStore: IDocumentStore) {
@@ -60,15 +58,26 @@ export class Results {
   }
 
   async addTermResults(docVectors: Vector[]): Promise<boolean> {
-    // FIXME: This isn't right. This will totally create duplicate documents in
-    //     the result set. We need either a `Set` or a `Map` for the short-term,
-    //     and no clue what to do "at scale".
+    // FIXME: This is fine for now, but no clue what to do "at scale".
     for (let docVector of docVectors) {
-      const result = new Result(docVector.id);
-      // FIXME: This needs more, like the vectors getting set on the results,
-      //     fetching the document length (for scoring purposes), etc.
-      this.results.push(result);
+      let result: IResult;
+      const wordLocation: WordLocation = {
+        originalWord: docVector.originalWord,
+        location: docVector.location,
+      };
+
+      if (this.unscored.has(docVector.id)) {
+        result = this.unscored.get(docVector.id)!;
+        result.locations.push(wordLocation);
+      }
+      else {
+        result = new Result(docVector.id);
+        result.locations.push(wordLocation);
+        result.docLength = await this.documentStore.getDocumentLength(docVector.id);
+        this.unscored.set(docVector.id, result);
+      }
     }
+
     return true;
   }
 
@@ -78,9 +87,13 @@ export class Results {
     //     sort as we score.
     //     But I want to get things working first, then optimize. So it's O(2n)
     //     for now.
-    for (let result of this.results) {
+    for (let result of this.unscored.values()) {
       await scorer.score(result);
+      this.results.push(result);
     }
+
+    // FIXME: We're also being super-wasteful on memory here, with two copies of
+    //     each result (one in unscored, one in results). Oof.
 
     // Sort in descending order, in place.
     this.results.sort((a, b) => b.score - a.score);

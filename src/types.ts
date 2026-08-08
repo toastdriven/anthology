@@ -6,6 +6,11 @@ export type Document = {
   contentType?: string;
 };
 
+export type WordLocation = {
+  originalWord: string;
+  location: number;
+};
+
 export type Vector = {
   id: DocId;
   originalWord: string;

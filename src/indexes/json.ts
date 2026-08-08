@@ -20,6 +20,10 @@ export class JSONIndex implements IIndex {
     this.#data = new Map();
   }
 
+  async length() {
+    return this.#data.size;
+  }
+
   getTerm(term: string): Vector[] {
     const vectors = this.#data.get(term);
     if (vectors === undefined) {
@@ -46,6 +50,13 @@ export class JSONIndex implements IIndex {
         this.#isDirty = true;
       }
     }
+  }
+
+  async clear(): Promise<boolean> {
+    this.#data = new Map();
+    this.#isDirty = true;
+    await this.save();
+    return true;
   }
 
   serialize(): SerializedIndexData {

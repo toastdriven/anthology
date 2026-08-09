@@ -1,22 +1,36 @@
 /**
  * Shared test helpers.
  */
-import type { SearchEngine } from "../src/engine.ts";
+import type { ISearchEngine } from "../src/interfaces.ts";
+import { Result, Results } from "../src/results.ts";
 import type { Document } from "../src/types.ts";
 
 // ---------------------------------------------------------------------------
 // Mock engine
 // ---------------------------------------------------------------------------
 
-export function makeMockEngine(overrides: Partial<Record<keyof SearchEngine, unknown>> = {}): SearchEngine {
+export function makeMockEngine(overrides: Partial<ISearchEngine> = {}): ISearchEngine {
   return {
     setUp: async () => {},
+    clear: async (): Promise<boolean> => true,
+    indexSize: async (): Promise<number> => 0,
+    documentStoreSize: async (): Promise<number> => 0,
     getDocument: async (_id: string): Promise<Document> => ({ id: "1", content: "hello" }),
     addDocument: async (_doc: Document): Promise<void> => {},
     deleteDocument: async (_id: string): Promise<void> => {},
-    search: (_query: string): string[] => [],
+    rawSearch: async (_query: string): Promise<Results> => new Results({
+      length: async () => 0,
+      getDocument: async () => { throw new Error("not implemented in mock"); },
+      getDocumentLength: async () => 0,
+      addDocument: async () => true,
+      deleteDocument: async () => true,
+      clear: async () => true,
+      load: async () => {},
+      save: async () => {},
+    }),
+    search: async (_query: string): Promise<Result[]> => [],
     ...overrides,
-  } as unknown as SearchEngine;
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -33,4 +47,16 @@ export function makeRequest(
   init?: RequestInit,
 ): Bun.BunRequest {
   return Object.assign(new Request(url, init), { params }) as Bun.BunRequest;
+}
+
+// ---------------------------------------------------------------------------
+// Mock result builder
+// ---------------------------------------------------------------------------
+
+/**
+ * Builds a `Result`-shaped object for use in view/engine mocks.
+ */
+export function makeResult(id: string, overrides: Partial<Result> = {}): Result {
+  const result = new Result(id);
+  return Object.assign(result, overrides);
 }

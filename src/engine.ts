@@ -1,12 +1,11 @@
 import { QUERY_DOCUMENT } from './constants';
-import { FilesystemDocumentStore } from './documents/fs';
 import { InMemoryDocumentStore } from './documents/in-memory';
-import { JSONDocumentStore } from './documents/json';
 import { InMemoryIndex } from './indexes/in-memory';
 import type {
   IDocumentStore,
   IIndex,
   IScorer,
+  ISearchEngine,
   ITokenizer,
 } from './interfaces';
 import { Postprocessor } from './postprocessor';
@@ -31,7 +30,7 @@ export interface ISearchEngineOptions {
   postprocessor?: Postprocessor;
 }
 
-export class SearchEngine {
+export class SearchEngine implements ISearchEngine {
   private readonly index: IIndex;
   private readonly tokenizer: ITokenizer;
   private readonly preprocessor: Preprocessor;
@@ -50,13 +49,22 @@ export class SearchEngine {
   }
 
   async setUp(): Promise<void> {
-    // TODO: Just an empty hook for now?
+    await this.index.load();
+    await this.documentStore.load();
   }
 
   async clear(): Promise<boolean> {
     await this.index.clear();
     await this.documentStore.clear();
     return true;
+  }
+
+  async indexSize(): Promise<number> {
+    return await this.index.length();
+  }
+
+  async documentStoreSize(): Promise<number> {
+    return await this.documentStore.length();
   }
 
   async getDocument(id: DocId): Promise<Document> {
@@ -67,14 +75,14 @@ export class SearchEngine {
     await this.documentStore.addDocument(document);
     const processed = await this.preprocessor.process(document);
     const termVectors = this.tokenizer.tokenize(processed);
-    termVectors.forEach((tv) => {
-      this.index.addTerm(tv);
-    });
+    for (const tv of termVectors) {
+      await this.index.addTerm(tv);
+    }
     return await this.index.save();
   }
 
   async deleteDocument(id: DocId): Promise<void> {
-    // FIXME: Need index deletion implemented...
+    await this.index.deleteDocument(id);
     await this.documentStore.deleteDocument(id);
     return;
   }
@@ -90,7 +98,7 @@ export class SearchEngine {
     const results = new Results(this.documentStore);
 
     for (const tv of queryTerms) {
-      const docVectors = this.index.getTerm(tv.term);
+      const docVectors = await this.index.getTerm(tv.term);
       await results.addTermResults(docVectors);
     }
 
@@ -99,7 +107,7 @@ export class SearchEngine {
   }
 
   // FIXME: This is a stub for the basic search & needs much more.
-  async search(query: string): Promise<Results> {
+  async search(query: string): Promise<Result[]> {
     const rawResults = await this.rawSearch(query);
     // FIXME: Post-slicing the results, we should be loading the documents for
     //     each (as well as any other post-processing).

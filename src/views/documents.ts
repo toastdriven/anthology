@@ -1,5 +1,6 @@
-import type { ViewContext } from "../context";
-import type { Document } from "../types";
+import { z } from "zod";
+import { DocumentSchema } from "../schemas";
+import type { ViewContext } from "../types";
 
 export function makeDocumentViews({ engine }: ViewContext) {
   return {
@@ -23,8 +24,21 @@ export function makeDocumentViews({ engine }: ViewContext) {
       return Response.json(respData, { status: 200 });
     },
     async updateDocument(req: Bun.BunRequest): Promise<Response> {
-      // FIXME: Needs validation
-      const data = await req.json() as unknown as Document;
+      // `req.json()` returns `any` — nothing here is trustworthy until
+      // validated. `.parse()` throws a ZodError (bad shape, missing fields,
+      // wrong types, etc.) which we catch below and turn into a 400,
+      // instead of letting a malformed body reach `engine.addDocument()`
+      // and fail later with a confusing, unrelated error.
+      let data;
+      try {
+        data = DocumentSchema.parse(await req.json());
+      } catch (err) {
+        const errors = err instanceof z.ZodError
+          ? err.issues.map(issue => `${issue.path.join('.') || '(root)'}: ${issue.message}`)
+          : ['Request body must be valid JSON.'];
+        return Response.json({ success: false, errors }, { status: 400 });
+      }
+
       await engine.addDocument(data);
       let respData = {
         success: true,

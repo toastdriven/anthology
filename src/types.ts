@@ -1,3 +1,5 @@
+import type { ISearchEngine } from './interfaces';
+
 export type DocId = string;
 
 export type Document = {
@@ -25,4 +27,8 @@ export type TermVector = {
 export type Token = {
   word: string;
   offset: number;
+};
+
+export type ViewContext = {
+  engine: ISearchEngine;
 };

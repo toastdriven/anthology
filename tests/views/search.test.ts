@@ -1,6 +1,7 @@
 import { describe, test, expect, mock } from "bun:test";
 import { makeSearchViews } from "../../src/views/search.ts";
-import { makeMockEngine, makeRequest } from "../helpers.ts";
+import type { Result } from "../../src/results.ts";
+import { makeMockEngine, makeRequest, makeResult } from "../helpers.ts";
 
 const BASE_URL = "http://localhost/search/basic";
 
@@ -33,14 +34,15 @@ describe("basicSearch", () => {
 
   // --- happy path -----------------------------------------------------------
 
-  test("returns 200 with results on a valid query", async () => {
-    const views = makeViews({ search: () => ["1", "2"] });
+  test("returns 200 with the resolved results array", async () => {
+    const views = makeViews({ search: async () => [makeResult("1"), makeResult("2")] });
     const req = makeRequest(`${BASE_URL}?q=hello`);
     const res = await views.basicSearch(req);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.success).toBe(true);
-    expect(body.results).toEqual(["1", "2"]);
+    expect(body.results).toBeArray();
+    expect(body.results.map((r: { id: string }) => r.id)).toEqual(["1", "2"]);
   });
 
   test("echoes the query back in the response", async () => {
@@ -51,8 +53,8 @@ describe("basicSearch", () => {
     expect(body.query).toBe("hello world");
   });
 
-  test("returns an empty results array when no documents match", async () => {
-    const views = makeViews({ search: () => [] });
+  test("returns an empty results array when the mock resolves an empty array", async () => {
+    const views = makeViews({ search: async () => [] });
     const req = makeRequest(`${BASE_URL}?q=unknownterm`);
     const res = await views.basicSearch(req);
     expect(res.status).toBe(200);
@@ -64,7 +66,7 @@ describe("basicSearch", () => {
   // --- engine delegation ----------------------------------------------------
 
   test("calls engine.search with the query string", async () => {
-    const search = mock((_query: string): string[] => []);
+    const search = mock(async (_query: string): Promise<Result[]> => []);
     const views = makeViews({ search });
     const req = makeRequest(`${BASE_URL}?q=cats`);
     await views.basicSearch(req);
@@ -73,7 +75,7 @@ describe("basicSearch", () => {
   });
 
   test("does not call engine.search when query is invalid", async () => {
-    const search = mock((_query: string): string[] => []);
+    const search = mock(async (_query: string): Promise<Result[]> => []);
     const views = makeViews({ search });
     const req = makeRequest(BASE_URL); // no `q`
     await views.basicSearch(req);

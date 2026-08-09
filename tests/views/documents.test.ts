@@ -85,6 +85,81 @@ describe("updateDocument", () => {
     expect(addDocument).toHaveBeenCalledTimes(1);
     expect(addDocument.mock.calls[0]?.[0]).toEqual(SAMPLE_DOC);
   });
+
+  test("returns 400 and does not call engine.addDocument when the body is missing required fields", async () => {
+    const addDocument = mock(async (_doc: Document) => {});
+    const views = makeViews({ addDocument });
+    const req = makeRequest(
+      `${BASE_URL}42`,
+      { id: "42" },
+      {
+        method: "POST",
+        body: JSON.stringify({ id: "42" }), // missing `content`
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    const res = await views.updateDocument(req);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(body.errors).toBeArray();
+    expect(body.errors.length).toBeGreaterThan(0);
+    expect(addDocument).not.toHaveBeenCalled();
+  });
+
+  test("returns 400 and does not call engine.addDocument when a field has the wrong type", async () => {
+    const addDocument = mock(async (_doc: Document) => {});
+    const views = makeViews({ addDocument });
+    const req = makeRequest(
+      `${BASE_URL}42`,
+      { id: "42" },
+      {
+        method: "POST",
+        body: JSON.stringify({ id: 42, content: "hello" }), // id should be a string
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    const res = await views.updateDocument(req);
+    expect(res.status).toBe(400);
+    expect(addDocument).not.toHaveBeenCalled();
+  });
+
+  test("returns 400 and does not call engine.addDocument when the body is not valid JSON", async () => {
+    const addDocument = mock(async (_doc: Document) => {});
+    const views = makeViews({ addDocument });
+    const req = makeRequest(
+      `${BASE_URL}42`,
+      { id: "42" },
+      {
+        method: "POST",
+        body: "not json",
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    const res = await views.updateDocument(req);
+    expect(res.status).toBe(400);
+    const body = await res.json();
+    expect(body.success).toBe(false);
+    expect(addDocument).not.toHaveBeenCalled();
+  });
+
+  test("accepts an optional contentType", async () => {
+    const addDocument = mock(async (_doc: Document) => {});
+    const views = makeViews({ addDocument });
+    const doc = { id: "42", content: "<p>hi</p>", contentType: "text/html" };
+    const req = makeRequest(
+      `${BASE_URL}42`,
+      { id: "42" },
+      {
+        method: "POST",
+        body: JSON.stringify(doc),
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    const res = await views.updateDocument(req);
+    expect(res.status).toBe(202);
+    expect(addDocument.mock.calls[0]?.[0]).toEqual(doc);
+  });
 });
 
 // ---------------------------------------------------------------------------

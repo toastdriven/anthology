@@ -1,13 +1,13 @@
 import { DATA_ROOT } from "../constants";
 import type { IDocumentStore } from "../interfaces";
+import { SerializedDocumentsSchema } from "../schemas";
 import type {
   DocId,
   Document,
-  Vector,
 } from '../types';
 import { ensurePath } from "../utils/fs";
 
-type IndexData = Map<string, Vector[]>;
+type DocumentsData = Map<DocId, Document>;
 type SerializedDocumentsData = Record<DocId, Document>;
 
 export class JSONDocumentStore implements IDocumentStore {
@@ -38,12 +38,14 @@ export class JSONDocumentStore implements IDocumentStore {
 
   async addDocument(document: Document): Promise<boolean> {
     this.#data.set(document.id, document);
+    this.#isDirty = true;
     await this.save();
     return true;
   }
 
   async deleteDocument(id: DocId): Promise<boolean> {
     this.#data.delete(id);
+    this.#isDirty = true;
     await this.save();
     return true;
   }
@@ -59,7 +61,7 @@ export class JSONDocumentStore implements IDocumentStore {
     return Object.fromEntries(this.#data);
   }
 
-  deserialize(raw: SerializedDocumentsData): SerializedDocumentsData {
+  deserialize(raw: SerializedDocumentsData): DocumentsData {
     return new Map(Object.entries(raw));
   }
 
@@ -71,7 +73,11 @@ export class JSONDocumentStore implements IDocumentStore {
     ensurePath(this.storagePath);
     const indexFile = Bun.file(this.makeFilePath());
     if (!(await indexFile.exists())) { return; }
-    const rawData: SerializedDocumentsData = await indexFile.json();
+    // `.json()` returns `any` — nothing here is trustworthy until validated.
+    // `.parse()` throws a descriptive `ZodError` (bad shape, missing fields,
+    // wrong types, etc.) right at the boundary, instead of letting corrupt
+    // persisted data silently propagate into the rest of the engine.
+    const rawData: SerializedDocumentsData = SerializedDocumentsSchema.parse(await indexFile.json());
     this.#data = this.deserialize(rawData);
     this.#isDirty = false;
   }

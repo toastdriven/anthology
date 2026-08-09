@@ -1,7 +1,12 @@
 {
   "compilerOptions": {
     // Environment setup & latest features
-    "lib": ["ESNext"],
+    // "DOM" is required for correct `Response`/`Request`/`fetch` Body typings
+    // (without it, Bun's global `Response`/`Request` fall back to
+    // `undici-types`, whose `.json()` returns `Promise<unknown>` instead of
+    // `Promise<any>` — which is what was causing the `'body' is of type
+    // 'unknown'` errors under `tests/views/*.test.ts`).
+    "lib": ["ESNext", "DOM"],
     "target": "ESNext",
     "module": "Preserve",
     "moduleDetection": "force",

@@ -4,7 +4,7 @@ export async function run(args: string[]): Promise<number> {
   const command = args[0] ?? "serve";
 
   if (command === "serve") {
-    const server = makeServer({});
+    const server = await makeServer({});
     console.log(`Server running at ${server.url}...`);
     return 0;
   }

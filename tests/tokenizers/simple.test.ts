@@ -105,21 +105,21 @@ describe("SimpleTokenizer", () => {
   describe("tokenize — offsets", () => {
     test("records the character offset of each token", () => {
       const result = tokenize("hello world");
-      expect(result[0].vector).toEqual({ id: "test", location: 0 });
-      expect(result[1].vector).toEqual({ id: "test", location: 6 });
+      expect(result[0]!.vector).toEqual({ id: "test", originalWord: "hello", location: 0 });
+      expect(result[1]!.vector).toEqual({ id: "test", originalWord: "world", location: 6 });
     });
 
     test("offset reflects position in original string, not cleaned word", () => {
       // "cats" starts at index 0; after prepare → "cat", but location stays 0
       const result = tokenize("cats");
-      expect(result[0].vector.location).toBe(0);
+      expect(result[0]!.vector.location).toBe(0);
     });
 
     test("assigns correct offsets when stop words are skipped", () => {
       // "the" is a stop word at 0; "cat" starts at 4
       const result = tokenize("the cat");
       expect(result).toHaveLength(1);
-      expect(result[0].vector.location).toBe(4);
+      expect(result[0]!.vector.location).toBe(4);
     });
   });
 
@@ -144,10 +144,17 @@ describe("SimpleTokenizer", () => {
   describe("tokenize — TermVector shape", () => {
     test("each result has term and vector fields", () => {
       const result = tokenize("hello");
-      expect(result[0]).toHaveProperty("term");
-      expect(result[0]).toHaveProperty("vector");
-      expect(result[0].vector).toHaveProperty("id");
-      expect(result[0].vector).toHaveProperty("location");
+      expect(result[0]!).toHaveProperty("term");
+      expect(result[0]!).toHaveProperty("vector");
+      expect(result[0]!.vector).toHaveProperty("id");
+      expect(result[0]!.vector).toHaveProperty("originalWord");
+      expect(result[0]!.vector).toHaveProperty("location");
+    });
+
+    test("vector.originalWord carries the pre-stemmed word", () => {
+      const result = tokenize("cats");
+      expect(result[0]!.term).toBe("cat");
+      expect(result[0]!.vector.originalWord).toBe("cats");
     });
   });
 });

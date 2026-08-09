@@ -7,8 +7,11 @@ import type { Document } from "../src/types";
 // Test doubles
 // ---------------------------------------------------------------------------
 
+let pluginCounter = 0;
+
 function makePlugin(contentTypes: string[], transform?: (content: string) => string): IPreprocessorPlugin {
   return {
+    name: `test-plugin-${++pluginCounter}`,
     contentTypes,
     async process(doc: Document): Promise<Document> {
       return {
@@ -109,6 +112,7 @@ describe("Preprocessor", () => {
       const p = new Preprocessor();
       let called = false;
       const plugin: IPreprocessorPlugin = {
+        name: "dispatch-test-plugin",
         contentTypes: ["text/html"],
         async process(doc) {
           called = true;
@@ -131,6 +135,7 @@ describe("Preprocessor", () => {
       const p = new Preprocessor();
       let called = false;
       const plugin: IPreprocessorPlugin = {
+        name: "markdown-test-plugin",
         contentTypes: ["text/markdown"],
         async process(doc) {
           called = true;

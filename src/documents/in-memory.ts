@@ -37,4 +37,12 @@ export class InMemoryDocumentStore implements IDocumentStore {
     this.#data = new Map();
     return true;
   }
+
+  async load(): Promise<void> {
+    // No-op;
+  }
+
+  async save(): Promise<void> {
+    // No-op;
+  }
 }

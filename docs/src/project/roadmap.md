@@ -19,6 +19,7 @@ Anthology, up to the `1.0.0` release. No guarantees, just a basic plan/guide.
 
 ## 0.2.0
 
+* Index doc->term reverse maps & persistence
 * SQLite-based Index
 * SQLite-based Document Store
 * Flat-file Document Store

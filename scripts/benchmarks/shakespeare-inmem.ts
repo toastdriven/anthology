@@ -4,12 +4,14 @@ import {
   type Document,
   InMemoryDocumentStore,
   InMemoryIndex,
-  JSONDocumentStore,
-  JSONIndex,
+  type Result,
   SearchEngine,
 } from 'anthology';
 
-import { benchmark } from "./bench-utils";
+import {
+  benchmark,
+  showResults,
+} from "./bench-utils";
 
 const shakespearePath = "/Users/daniel/Desktop/shakespeares-works";
 
@@ -37,14 +39,14 @@ elapsed = await benchmark(async () => {
 console.log(`Indexing took '${elapsed}' seconds`);
 console.log('\n===\n');
 
-let query;
-let results;
+let query: string;
+let results: Result[];
 
 // Run some queries.
 elapsed = await benchmark(async () => {
-  query = 'what light';
+  query = 'what light through yonder window breaks';
   results = await engine.search(query);
-  console.log(`Query: '${query}'. Results: ${JSON.stringify(results)}`);
+  showResults(query, results);
 });
 console.log(`Query took '${elapsed}' seconds`);
 console.log('\n===\n');
@@ -52,7 +54,7 @@ console.log('\n===\n');
 elapsed = await benchmark(async () => {
   query = 'Hamlet';
   results = await engine.search(query);
-  console.log(`Query: '${query}'. Results: ${JSON.stringify(results)}`);
+  showResults(query, results);
 });
 console.log(`Query took '${elapsed}' seconds`);
 console.log('\n===\n');

@@ -12,7 +12,7 @@ export class InMemoryIndex implements IIndex {
     return this.#data.size;
   }
 
-  getTerm(term: string): Vector[] {
+  async getTerm(term: string): Promise<Vector[]> {
     const vectors = this.#data.get(term);
     if (vectors === undefined) {
       return [];
@@ -20,8 +20,8 @@ export class InMemoryIndex implements IIndex {
     return vectors.slice();
   }
 
-  addTerm(tv: TermVector): void {
-    const vectors = this.getTerm(tv.term);
+  async addTerm(tv: TermVector): Promise<void> {
+    const vectors = await this.getTerm(tv.term);
     const isDupe = vectors.some(v => v.id === tv.vector.id && v.location === tv.vector.location);
     if (!isDupe) {
       vectors.push(tv.vector);
@@ -29,7 +29,7 @@ export class InMemoryIndex implements IIndex {
     }
   }
 
-  deleteDocument(docId: DocId): void {
+  async deleteDocument(docId: DocId): Promise<void> {
     for (const [term, vectors] of this.#data) {
       const revised = vectors.filter(v => v.id !== docId);
       if (revised.length !== vectors.length) {

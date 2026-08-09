@@ -1,5 +1,4 @@
-import type { ViewContext } from "../context";
-import type { Document } from "../types";
+import type { ViewContext } from "../types";
 
 export function makeSearchViews({ engine }: ViewContext) {
   return {
@@ -15,7 +14,7 @@ export function makeSearchViews({ engine }: ViewContext) {
         return Response.json(respData, { status: 400 });
       }
 
-      const results = engine.search(query);
+      const results = await engine.search(query);
       respData = {
         success: true,
         'query': query,

@@ -1,6 +1,7 @@
 import type {
   IDocumentStore,
   IResult,
+  IResults,
   IScorer,
 } from "./interfaces";
 import type {
@@ -34,7 +35,7 @@ iterator/iterable). It needs to be able to do all the slicing, as well as
 fetching documents/enriching the individual Result instances that will be handed
 to the users.
 */
-export class Results {
+export class Results implements IResults {
   documentStore: IDocumentStore;
   unscored: Map<string, IResult> = new Map();
   results: Result[] = [];

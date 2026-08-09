@@ -4,7 +4,7 @@ import {
   InMemoryIndex,
   JSONDocumentStore,
   JSONIndex,
-  type Results,
+  type Result,
   SearchEngine,
 } from 'anthology';
 
@@ -129,7 +129,7 @@ function trimScore(score: number): string {
   return parseFloat(score.toString()).toFixed(6);
 }
 
-function showResults(query: string, results: Results): void {
+function showResults(query: string, results: Result[]): void {
   console.log(`Query: '${query}'. Results: ${results.length}`);
   for (let res of results) {
     console.log(`* ${res.id} (Score: ${trimScore(res.score)})`)

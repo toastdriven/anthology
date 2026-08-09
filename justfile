@@ -8,7 +8,7 @@ setup:
     bun install
 
 lint:
-    bunx tsc --noEmit -p tsconfig.lint.json
+    bunx tsc --noEmit -p tsconfig.json
 
 format:
     bunx prettier "**/*.ts" --write

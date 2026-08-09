@@ -9,6 +9,7 @@ import { HTMLPreprocessor } from './preprocessors/html';
 import { SimpleTokenizer } from './tokenizers/simple';
 import type { ViewContext } from './types';
 import { makeDocumentViews } from './views/documents';
+import { makeHealthViews } from './views/health';
 import { makeSearchViews } from './views/search';
 import { makeStatsViews } from './views/stats';
 
@@ -18,7 +19,7 @@ interface IServerOptions {
   port?: number,
 }
 
-export async function makeServer(options: IServerOptions): Promise<Bun.Server<undefined>> {
+export async function makeServer(options: IServerOptions): Promise<Bun.Serve.Options<undefined>> {
   const engine = options.engine ?? new SearchEngine({
     index: new InMemoryIndex(),
     tokenizer: new SimpleTokenizer(),
@@ -30,15 +31,18 @@ export async function makeServer(options: IServerOptions): Promise<Bun.Server<un
   const docViews = makeDocumentViews(context);
   const searchViews = makeSearchViews(context);
   const statsViews = makeStatsViews(context);
+  const healthViews = makeHealthViews(context);
 
-  return Bun.serve({
+  return {
     hostname: options.hostname ?? DEFAULT_HOSTNAME,
     port: options.port ?? DEFAULT_PORT,
 
     routes: {
+      "/documents": {
+        POST: docViews.updateDocument,
+      },
       "/documents/:id": {
         GET: docViews.getDocument,
-        POST: docViews.updateDocument,
         PUT: docViews.updateDocument,
         DELETE: docViews.deleteDocument,
       },
@@ -49,16 +53,18 @@ export async function makeServer(options: IServerOptions): Promise<Bun.Server<un
 
       "/stats": statsViews.generalStats,
 
-      // FIXME: Eventually add a "/health" endpoint?
+      "/health": healthViews.healthCheck,
     },
 
     fetch(req: Bun.BunRequest): Response {
       return Response.json({ success: false, errors: ["Not Found"] }, { status: 404 });
     },
-  });
+  };
 }
 
 if (import.meta.main) {
-  const server = await makeServer({});
+  // FIXME: Look at process.argv for host/port information.
+  const serverOptions = await makeServer({});
+  const server = Bun.serve(serverOptions);
   console.log(`Server running at ${server.url}`);
 }

@@ -30,6 +30,9 @@
     "api",
     "typescript"
   ],
+  "scripts": {
+    "serve": "bun run src/server.ts"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "prettier": "^3.6.2",

@@ -41,8 +41,20 @@ for (let res of results) {
 ## Standalone Server
 
 ```bash
-$ bun run anthology.ts
+$ bun serve
 # "Server running at http://0.0.0.0:8080/..."
+
+$ curl \
+    -X POST \
+    -H "Content-Type: application/json" \
+    --data '{"id: "1", "content": "Hello, world!"}' \
+    http://0.0.0.0:8080/documents
+# {"success":true,"id":"1"}
+
+$ curl \
+    -X GET \
+    'http://0.0.0.0:8080/search/basic?q=hello'
+# {"success": true, "query": "hello", "results": [{"id": "1", "locations": [{"originalWord": "Hello,", "location": 0}], "score": 0.46153846153846156, "docLength": 13}]}
 ```
 
 ## Roadmap

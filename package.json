@@ -1,6 +1,6 @@
 {
   "name": "@toastdriven/anthology",
-  "version": "0.1.0",
+  "version": "0.2.0-dev",
   "description": "A highly extensible/customizable search engine. Embeddable or stand-alone.",
   "module": "index.ts",
   "exports": {

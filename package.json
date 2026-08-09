@@ -1,6 +1,6 @@
 {
-  "name": "anthology",
-  "version": "0.1.0-alpha",
+  "name": "@toastdriven/anthology",
+  "version": "0.1.0",
   "description": "A highly extensible/customizable search engine. Embeddable or stand-alone.",
   "module": "index.ts",
   "exports": {
@@ -22,7 +22,13 @@
   },
   "homepage": "https://anthologysearch.org/",
   "keywords": [
-    "search"
+    "search",
+    "search-engine",
+    "service",
+    "http",
+    "http-server",
+    "api",
+    "typescript"
   ],
   "devDependencies": {
     "@types/bun": "latest",

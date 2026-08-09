@@ -1,4 +1,4 @@
-export const VERSION = '0.1.0-alpha';
+export const VERSION = '0.1.0';
 
 export const QUERY_DOCUMENT = 'just-a-query';
 

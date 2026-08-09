@@ -17,14 +17,14 @@ bun install
 ## Embedded Usage
 
 ```typescript
-const engine = new SearchEngine(
-  new InMemoryIndex(),
-  new SimpleTokenizer(),
-  new Preprocessor()
+const engine = new SearchEngine({
+  index: new InMemoryIndex(),
+  tokenizer: new SimpleTokenizer(),
+  preprocessor: new Preprocessor()
     .register(new HTMLPreprocessor())
     .register(new MarkdownPreprocessor())
     .register(new PDFPreprocessor()),
-);
+));
 
 await engine.addDocument({
   id: "page-1",
@@ -32,7 +32,10 @@ await engine.addDocument({
   contentType: "text/html",
 });
 
-await engine.search("Hello");
+const results = await engine.search("Hello");
+for (let res of results) {
+  console.log(`* ${res.id} (Score: ${res.score})`);
+}
 ```
 
 ## Standalone Server

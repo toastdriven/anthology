@@ -6,7 +6,7 @@ import {
   InMemoryIndex,
   type Result,
   SearchEngine,
-} from 'anthology';
+} from '@toastdriven/anthology';
 
 import {
   benchmark,

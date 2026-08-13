@@ -1,4 +1,4 @@
-import type { Result } from 'anthology';
+import type { Result } from '@toastdriven/anthology';
 
 export function convertToElapsedSeconds(nanoStart: number, nanoEnd: number): number {
   const elapsed = nanoEnd - nanoStart;

@@ -24,7 +24,7 @@ const engine = new SearchEngine({
     .register(new HTMLPreprocessor())
     .register(new MarkdownPreprocessor())
     .register(new PDFPreprocessor()),
-));
+});
 
 await engine.addDocument({
   id: "page-1",

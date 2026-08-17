@@ -10,6 +10,7 @@ import { SimpleTokenizer } from './tokenizers/simple';
 import type { ViewContext } from './types';
 import { makeDocumentViews } from './views/documents';
 import { makeHealthViews } from './views/health';
+import { makeSchemaViews } from './views/openapi';
 import { makeSearchViews } from './views/search';
 import { makeStatsViews } from './views/stats';
 
@@ -31,6 +32,7 @@ export async function makeServer(options: IServerOptions): Promise<Bun.Serve.Opt
   const docViews = makeDocumentViews(context);
   const searchViews = makeSearchViews(context);
   const statsViews = makeStatsViews(context);
+  const schemaViews = makeSchemaViews(context);
   const healthViews = makeHealthViews(context);
 
   return {
@@ -52,7 +54,7 @@ export async function makeServer(options: IServerOptions): Promise<Bun.Serve.Opt
       // "/search/more-like-this/:id": searchViews.moreLikeThis,
 
       "/stats": statsViews.generalStats,
-
+      "/schema": schemaViews.openapiSchema,
       "/health": healthViews.healthCheck,
     },
 

@@ -16,9 +16,14 @@ export interface IIndex {
   save(): Promise<void>;
 }
 
-export interface ITokenizer {
+export interface ITokenizerPlugin {
   prepare(rawWord: string): string;
-  tokenize(document: Document): TermVector[];
+  tokenize(document: Document): Promise<TermVector[]>;
+}
+
+export interface ITokenizer {
+  register(plugin: ITokenizerPlugin): ITokenizer;
+  tokenize(document: Document): Promise<TermVector[]>;
 }
 
 export interface IDocumentStore {

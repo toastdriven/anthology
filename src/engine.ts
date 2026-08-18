@@ -15,6 +15,7 @@ import {
   Results,
 } from './results';
 import { SimpleScorer } from './scorers/simple';
+import { Tokenizer } from './tokenizer';
 import { SimpleTokenizer } from './tokenizers/simple';
 import type {
   DocId,
@@ -41,7 +42,8 @@ export class SearchEngine implements ISearchEngine {
   constructor(options: ISearchEngineOptions) {
     // FIXME: Eventually, this will need saner/persistent defaults.
     this.index = options.index ?? new InMemoryIndex();
-    this.tokenizer = options.tokenizer ?? new SimpleTokenizer();
+    this.tokenizer = options.tokenizer ?? new Tokenizer()
+      .register(new SimpleTokenizer());
     this.preprocessor = options.preprocessor ?? new Preprocessor();
     this.documentStore = options.documentStore ?? new InMemoryDocumentStore();
     this.scorer = options.scorer ?? new SimpleScorer();
@@ -74,7 +76,7 @@ export class SearchEngine implements ISearchEngine {
   async addDocument(document: Document): Promise<void> {
     await this.documentStore.addDocument(document);
     const processed = await this.preprocessor.process(document);
-    const termVectors = this.tokenizer.tokenize(processed);
+    const termVectors = await this.tokenizer.tokenize(processed);
     for (const tv of termVectors) {
       await this.index.addTerm(tv);
     }
@@ -93,7 +95,7 @@ export class SearchEngine implements ISearchEngine {
       id: QUERY_DOCUMENT,
       content: query,
     };
-    const queryTerms = this.tokenizer.tokenize(queryDoc);
+    const queryTerms = await this.tokenizer.tokenize(queryDoc);
 
     const results = new Results(this.documentStore);
 

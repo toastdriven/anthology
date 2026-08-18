@@ -17,6 +17,7 @@ export type {
   IScorer,
   ISearchEngine,
   ITokenizer,
+  ITokenizerPlugin,
 } from "./src/interfaces.ts";
 
 // Core engine
@@ -48,6 +49,7 @@ export { SimpleScorer } from "./src/scorers/simple.ts";
 export { makeServer } from "./src/server.ts";
 
 // Tokenizers
+export { Tokenizer } from "./src/tokenizer.ts";
 export {
   type SimpleTokenizerOptions,
   SimpleTokenizer,

@@ -6,6 +6,7 @@ import { SearchEngine } from './engine';
 import { InMemoryIndex } from './indexes/in-memory';
 import { Preprocessor } from './preprocessor';
 import { HTMLPreprocessor } from './preprocessors/html';
+import { Tokenizer } from './tokenizer';
 import { SimpleTokenizer } from './tokenizers/simple';
 import type { ViewContext } from './types';
 import { makeDocumentViews } from './views/documents';
@@ -23,7 +24,8 @@ interface IServerOptions {
 export async function makeServer(options: IServerOptions): Promise<Bun.Serve.Options<undefined>> {
   const engine = options.engine ?? new SearchEngine({
     index: new InMemoryIndex(),
-    tokenizer: new SimpleTokenizer(),
+    tokenizer: new Tokenizer()
+      .register(new SimpleTokenizer()),
     preprocessor: new Preprocessor()
       .register(new HTMLPreprocessor())
   });

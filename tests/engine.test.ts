@@ -2,6 +2,7 @@ import { describe, test, expect, beforeEach } from "bun:test";
 import { SearchEngine } from "../src/engine";
 import { InMemoryIndex } from "../src/indexes/in-memory";
 import { InMemoryDocumentStore } from "../src/documents/in-memory";
+import { Tokenizer } from "../src/tokenizer";
 import { SimpleTokenizer } from "../src/tokenizers/simple";
 import { Preprocessor } from "../src/preprocessor";
 import { HTMLPreprocessor } from "../src/preprocessors/html";
@@ -34,7 +35,7 @@ async function makeEngine(): Promise<SearchEngine> {
   const engine = new SearchEngine({
     index: new InMemoryIndex(),
     documentStore: new InMemoryDocumentStore(),
-    tokenizer: new SimpleTokenizer(),
+    tokenizer: new Tokenizer().register(new SimpleTokenizer()),
   });
   await engine.setUp();
   for (const doc of DOCUMENTS) {
@@ -188,7 +189,7 @@ function makeHtmlEngine(): SearchEngine {
   return new SearchEngine({
     index: new InMemoryIndex(),
     documentStore: new InMemoryDocumentStore(),
-    tokenizer: new SimpleTokenizer(),
+    tokenizer: new Tokenizer().register(new SimpleTokenizer()),
     preprocessor,
   });
 }

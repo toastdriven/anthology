@@ -9,14 +9,17 @@ export class Preprocessor {
     for (const ct of plugin.contentTypes) {
       this.#plugins.set(ct, plugin);
     }
+
     return this;
   }
 
   async process(document: Document): Promise<Document> {
     const plugin = this.#plugins.get(document.contentType ?? CONTENT_TYPE_PLAIN);
+
     if (!plugin) {
       return document;
     }
+
     return plugin.process(document);
   }
 }

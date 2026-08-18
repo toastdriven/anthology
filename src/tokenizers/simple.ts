@@ -2,7 +2,7 @@ import {
   PUNCTUATION,
   ENGLISH_STOP_WORDS,
 } from "../constants";
-import type { ITokenizer } from "../interfaces";
+import type { ITokenizerPlugin } from "../interfaces";
 import type {
   Document,
   TermVector,
@@ -13,7 +13,7 @@ export type SimpleTokenizerOptions = {
   stopWords?: Set<string>;
 };
 
-export class SimpleTokenizer implements ITokenizer {
+export class SimpleTokenizer implements ITokenizerPlugin {
   private suffixRegex: RegExp;
   private stopWords: Set<string>;
 
@@ -30,7 +30,7 @@ export class SimpleTokenizer implements ITokenizer {
       .replace(this.suffixRegex, "");
   }
 
-  tokenize(document: Document): TermVector[] {
+  async tokenize(document: Document): Promise<TermVector[]> {
     const sep = /\S+/g;
     const tokens = [...document.content.matchAll(sep)].map(match => {
       return {
@@ -38,6 +38,7 @@ export class SimpleTokenizer implements ITokenizer {
         offset: match.index,
       };
     });
+
     const termVectors: TermVector[] = tokens.map((token) => {
       const cleanWord = this.prepare(token.word);
       if (this.stopWords.has(cleanWord)) {
@@ -52,6 +53,7 @@ export class SimpleTokenizer implements ITokenizer {
         },
       };
     }).filter((res): res is TermVector => res !== null);
+
     return termVectors;
   }
 }

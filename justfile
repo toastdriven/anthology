@@ -29,6 +29,18 @@ format-check:
 #     just compile "bun-darwin-x64" "./dist/anthology-darwin-x64"
 #     just compile "bun-darwin-arm64" "./dist/anthology-darwin-arm64"
 
+# Exports the OpenAPI schema to a well-formatted JSON file (for validation purposes).
+# Requires the Anthology server to be running.
+@export-schema:
+    curl \
+        -X GET \
+        -H "Content-Type: application/json" \
+        --silent \
+        --show-error \
+        http://0.0.0.0:8080/schema \
+        | python -m json \
+        > ./reformatted-schema.json
+
 @build-docs:
     cd docs && mdbook build
 
